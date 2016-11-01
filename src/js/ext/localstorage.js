@@ -32,6 +32,18 @@ var lsCommandPluginFactory = function(md, emailProcessorBackend) {
     saveCmd.execute = function() {
       saveCmd.enabled(false);
       viewModel.metadata.changed = Date.now();
+      console.log(viewModel.metadata);
+      // DS: a popup asking msg template title to save in civi
+      var date  = new Date();
+      var options = { hour: 'numeric', minute: 'numeric', second: 'numeric'};
+      var fulldate = date.toLocaleDateString('en-GB',options);
+
+      var metaName = global.localStorage.getItem("name-" + mdkey);
+      if (!metaName || metaName == 'null') metaName   = viewModel.t('Mosaico Template ' + fulldate);
+      metaName = global.prompt(viewModel.t("Please enter the Message title"), metaName);
+      viewModel.metadata.name = metaName;
+      global.localStorage.setItem("name-" + mdkey, metaName);
+      // end
       if (typeof viewModel.metadata.key == 'undefined') {
         console.warn("Unable to find key in metadata object...", viewModel.metadata);
         viewModel.metadata.key = mdkey;
@@ -39,6 +51,36 @@ var lsCommandPluginFactory = function(md, emailProcessorBackend) {
       global.localStorage.setItem("metadata-" + mdkey, viewModel.exportMetadata());
       global.localStorage.setItem("template-" + mdkey, viewModel.exportJSON());
       saveCmd.enabled(true);
+
+      viewModel.notifier.info(viewModel.t("Saving in CiviCRM..."));
+      var postUrl = emailProcessorBackend ? emailProcessorBackend : '/dl/';
+      var post = $.post(postUrl, {
+        action: 'save',
+        key:  viewModel.metadata.key,
+        name: viewModel.metadata.name,
+        html: viewModel.exportHTML(),
+        metadata: viewModel.exportMetadata(),
+        template: viewModel.exportJSON(),
+      }, null, 'html');
+      post.fail(function() {
+        console.log("fail", arguments);
+        viewModel.notifier.error(viewModel.t('Unexpected error talking to server: contact us!'));
+      });
+      post.success(function() {
+        console.log("success", arguments);
+        try {
+          var result = JSON.parse(arguments[0]);
+          if ('id' in result) {
+            console.log("id", result.id);
+            viewModel.notifier.success(viewModel.t("Saved as message template in CiviCRM."));
+          } else {
+            viewModel.notifier.error(viewModel.t('Something went wrong while saving message template!'));
+          }
+        }
+        catch(e) {
+          viewModel.notifier.error(viewModel.t('Something went wrong while saving message template!'));
+        }
+      });
     };
     var testCmd = {
       name: 'Test', // l10n happens in the template
@@ -72,7 +114,18 @@ var lsCommandPluginFactory = function(md, emailProcessorBackend) {
           });
           post.success(function() {
             console.log("success", arguments);
-            viewModel.notifier.success(viewModel.t("Test email sent..."));
+            try {
+              var result = JSON.parse(arguments[0]);
+              if ('sent' in result) {
+                console.log("sent", result.sent);
+                viewModel.notifier.success(viewModel.t("Test email sent..."));
+              } else {
+                viewModel.notifier.error(viewModel.t('Something went wrong while sending email!'));
+              }
+            }
+            catch(e) {
+              viewModel.notifier.error(viewModel.t('Something went wrong while sending email!'));
+            }
           });
           post.always(function() {
             testCmd.enabled(true);
