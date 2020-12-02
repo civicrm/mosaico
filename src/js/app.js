@@ -43,7 +43,7 @@ var applyBindingOptions = function(options, ko) {
 
   ko.bindingHandlers.wysiwygSrc.placeholderUrl = function(width, height, text) {
     // DS: determine if to use ? or &. ? alone is certainly not going to work for wordpress
-    return options.imgProcessorBackend + ((options.imgProcessorBackend.indexOf('?') == -1) ? '?' : '&') + "method=" + 'placeholder' + "&params=" + width + encodeURIComponent(",") + height;
+    return options.imgPlaceholderUrl + ((options.imgPlaceholderUrl.indexOf('?') == -1) ? '?' : '&') + "method=" + 'placeholder' + "&params=" + width + encodeURIComponent(",") + height;
   };
 
   // pushes custom tinymce configurations from options to the binding
