@@ -122,7 +122,7 @@ var elaborateDeclarations = function(style, declarations, templateUrlConverter, 
             }
             var bindDefaultValue = propDefaultValue;
 
-            var bindName = _propToCamelCase(propName);
+            var bindName = !isBind && !isAttr ? _propToCamelCase(propName) : (propName.indexOf('-') != -1 ? '\''+propName+'\'' : propName);
 
             try {
               bindValue = converterUtils.expressionBinding(declarations[i].value, bindingProvider, bindDefaultValue);
@@ -159,7 +159,15 @@ var elaborateDeclarations = function(style, declarations, templateUrlConverter, 
             if (declarationCondition !== null) {
               try {
                 var bindingCond = converterUtils.conditionBinding(declarationCondition, bindingProvider);
-                bindValue = (not ? '!' : '') + "(" + bindingCond + ") ? " + bindValue + " : null";
+
+                // the match is a bit ugly, but we don't want to unwrap things if not needed (performance)
+                if (bindingCond.match(/^[^' ]*[^' \)]$/)) bindingCond = 'ko.utils.unwrapObservable(' + bindingCond + ')';
+                if (bindValue.match(/^[^' ]*[^' \)]$/)) bindValue = 'ko.utils.unwrapObservable(' + bindValue + ')';
+
+                // bindingCond should already have surrounding brackets when needed (at least this is true until we find a bug and create a test case for it)
+                if (not) bindingCond = '!' + bindingCond;
+
+                bindValue = bindingCond + " ? " + bindValue + " : null";
               } catch (e) {
                 console.error("Unable to deal with -ko style binding condition", declarationCondition, declarations[i].name);
                 throw e;
@@ -218,7 +226,9 @@ var elaborateDeclarations = function(style, declarations, templateUrlConverter, 
           }
 
           if (typeof bindVal2 !== 'undefined') {
-            newBindings[bind] = "'" + declarations[i].name + ": '+(" + bindVal2 + ")+';" + dist + "'+" + newBindings[bind];
+            // the match is a bit ugly, but we don't want to unwrap things if not needed (performance)
+            if (bindVal2.match(/^[^' ]*[^' \)]$/)) bindVal2 = 'ko.utils.unwrapObservable(' + bindVal2 + ')';
+            newBindings[bind] = "'" + declarations[i].name + ": '+" + bindVal2 + "+';" + dist + "'+" + newBindings[bind];
             delete newBindings['virtualStyle'][bindName2];
           } else {
             newBindings[bind] = "'" + declarations[i].name + ": " + converterUtils.addSlashes(replacedValue) + ";" + dist + "'+" + newBindings[bind];
@@ -238,7 +248,8 @@ var elaborateDeclarations = function(style, declarations, templateUrlConverter, 
 
     var currentBindings = domutils.getAttribute(element, 'data-bind');
     var dataBind = (currentBindings !== null ? currentBindings + ", " : "") + _bindingSerializer(newBindings);
-    domutils.setAttribute(element, 'data-bind', dataBind);
+    if (dataBind == '') domutils.removeAttribute(element, 'data-bind');
+    else domutils.setAttribute(element, 'data-bind', dataBind);
   }
 
   // TODO a function whose return type depends on the input parameters is very ugly.. please FIX ME.

@@ -11,6 +11,7 @@ var performanceAwareCaller = require("./timed-call.js").timedCall;
 
 var addUndoStackExtensionMaker = require("./undomanager/undomain.js");
 var colorPlugin = require("./ext/color.js");
+var utilPlugin = require("./ext/util.js");
 var inlinerPlugin = require("./ext/inliner.js");
 
 var localStorageLoader = require("./ext/localstorage.js");
@@ -26,22 +27,37 @@ function _canonicalize(url) {
   return div.firstChild.href;
 }
 
+function _appendUrlParameters(baseUrl, parameters) {
+  var paramSeparator = baseUrl.indexOf('?') == -1 ? '?' : '&';
+  var res = baseUrl;
+  for (var param in parameters) if (parameters.hasOwnProperty(param)) {
+    res += paramSeparator + param + "=" + encodeURIComponent(parameters[param]);
+    paramSeparator = '&';
+  }
+  return res;
+}
+
 var applyBindingOptions = function(options, ko) {
-  // push "convertedUrl" method to the wysiwygSrc binding
+
   ko.bindingHandlers.wysiwygSrc.convertedUrl = function(src, method, width, height) {
+    var queryParamSeparator;
     var imgProcessorBackend = options.imgProcessorBackend ? options.imgProcessorBackend : './upload';
     var backEndMatch = imgProcessorBackend.match(/^(https?:\/\/[^\/]*\/).*$/);
     var srcMatch = src.match(/^(https?:\/\/[^\/]*\/).*$/);
     if (backEndMatch === null || (srcMatch !== null && backEndMatch[1] == srcMatch[1])) {
-      return imgProcessorBackend + "?src=" + encodeURIComponent(src) + "&method=" + encodeURIComponent(method) + "&params=" + encodeURIComponent(width + "," + height);
+      queryParamSeparator = imgProcessorBackend.indexOf('?') == -1 ? '?' : '&';
+      return _appendUrlParameters(imgProcessorBackend, { src: src, method: method, params: width + "," + height });
     } else {
       console.log("Cannot apply backend image resizing to non-local resources ", src, method, width, height, backEndMatch, srcMatch);
-      return src + "?method=" + method + "&width=" + width + (height !== null ? "&height=" + height : '');
+      var params = { method: method, width: width };
+      if (height !== null) params['height'] = height;
+      return _appendUrlParameters(src, params);
     }
   };
 
   ko.bindingHandlers.wysiwygSrc.placeholderUrl = function(width, height, text) {
-    return options.imgProcessorBackend + "?method=" + 'placeholder' + "&params=" + width + encodeURIComponent(",") + height;
+    var imgProcessorBackend = options.imgProcessorBackend ? options.imgProcessorBackend : './upload';
+    return _appendUrlParameters(imgProcessorBackend, { method: 'placeholder', params: width + "," + height });
   };
 
   // pushes custom tinymce configurations from options to the binding
@@ -102,7 +118,7 @@ var start = function(options, templateFile, templateMetadata, jsorjson, customEx
   };
 
   // simpleTranslationPlugin must be before the undoStack to translate undo/redo labels
-  var extensions = [simpleTranslationPlugin, addUndoStackExtensionMaker(performanceAwareCaller), colorPlugin, inlinerPlugin];
+  var extensions = [simpleTranslationPlugin, addUndoStackExtensionMaker(performanceAwareCaller), colorPlugin, utilPlugin, inlinerPlugin];
   if (typeof customExtensions !== 'undefined')
     for (var k = 0; k < customExtensions.length; k++) extensions.push(customExtensions[k]);
   extensions.push(fileUploadMessagesExtension);
@@ -142,7 +158,7 @@ var init = function(options, customExtensions) {
   // Loading from configured template or configured metadata
   if (options && (options.template || options.data)) {
     if (options.data) {
-      var data = JSON.parse(options.data);
+      var data = typeof data == 'string' ? JSON.parse(options.data) : options.data;
       start(options, undefined, data.metadata, data.content, customExtensions);
     } else {
       start(options, options.template, undefined, undefined, customExtensions);

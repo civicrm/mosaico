@@ -7,12 +7,18 @@
 @input-margin-bottom: 10px; // 0.7em;
 @input-margin-right: 7px; // .5em
 @input-border-size: 1px;
+@input-base-height: 18px;
+
+@slider-height: @input-base-height + @input-border-size * 2 + @input-padding-v * 2;
+@slider-track-height: 8px;
+@slider-margin: (@slider-height - @slider-track-height) / 2;
+@slider-thumb-height: @slider-height - 2px;
 
 .input-button-common() {
   font-size: 1.0em;
   line-height: normal; // Firefox uses a "line-height: normal !important" for input elements, resulting in "1.2". If we use "1.2" on chrome we get bigger text (li has 1.25). Using "normal" works fine on both.
-  min-height: (18px + @input-border-size * 2 + @input-padding-v * 2); // Select size on Firefox is 18px, while another input is 16px, this creates differences fixed by min-height.
-  min-height: (18px + @input-border-size * 2 )@ie8hackprop; // IE8 ignores box-sizing for minheight, so we don't add @input-padding-v
+  min-height: (@input-base-height + @input-border-size * 2 + @input-padding-v * 2); // Select size on Firefox is 18px, while another input is 16px, this creates differences fixed by min-height.
+  min-height: (@input-base-height + @input-border-size * 2 )@ie8hackprop; // IE8 ignores box-sizing for minheight, so we don't add @input-padding-v
   vertical-align: middle;
 }
 
@@ -61,9 +67,9 @@
     color: @button-primary-text-color;
     background-color: @button-primary-background-color;
     border-color: @button-primary-border-color;
-    &:hover {
-      background-color: darken(@button-primary-background-color, 10%);
-      border-color: darken(@button-primary-border-color, 10%);
+    &:hover, &.pressed, &.selected {
+      background-color: @button-primary-hover-background-color;
+//      border-color: darken(@button-primary-border-color, 10%);
     }
   }
   &.big {
@@ -403,4 +409,27 @@
 .no-focus() {
   &:focus, &:-moz-focusring { outline: 0 none !important; }
   &::-moz-focus-inner { border: none; }
+}
+
+
+.slider-track() {
+  .input-style;
+  box-sizing: border-box;
+  height: @slider-track-height;
+  min-height: 0;
+  padding: 0;
+  cursor: pointer;
+  margin: @slider-margin 0;
+  font-size: 0; // Chrome thumb alignment depends on font-size/line-height
+  line-height: 0;
+}
+
+.slider-thumb() {
+  .button-style;
+  box-sizing: border-box;
+  min-height: 0;
+  height: @slider-thumb-height;
+  width: (@slider-height / 2);
+  padding: 0;
+  margin: 0;
 }
