@@ -1,82 +1,127 @@
 {
   "name": "mosaico",
-  "version": "0.14.0",
-  "description": "Free Email Template Editor",
+  "version": "0.17.5",
+  "description": "Mosaico - OpenSource Email Template Editor",
   "main": "./src/js/app.js",
-  "directories": {
-    "test": "test"
-  },
-  "aliasify": {
-    "aliases": {
-      "console": "console-browserify/index.js",
-      "jsep": "jsep/src/jsep.js",
-      "knockoutjs-reactor": "knockoutjs-reactor/src/knockout.reactor.js"
-    }
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:voidlabs/mosaico.git"
   },
   "browserify": {
     "transform": [
       "aliasify",
       "browserify-shim",
-      "debowerify"
+      "browserify-versionify"
     ]
+  },
+  "aliasify": {
+    "aliases": {
+      "console": "console-browserify",
+      "knockoutjs-reactor": "ko-reactor/dist/ko-reactor.min.js",
+      "tinycolor": "tinycolor2"
+    }
   },
   "browserify-shim": {
     "jquery": "global:jQuery",
-    "jquery-ui/sortable": "global:jQuery.ui.sortable",
-    "jquery-ui/draggable": "global:jQuery.ui.draggable",
-    "jquery-ui/spinner": "global:jQuery.ui.spinner",
-    "jquery-ui/tabs": "global:jQuery.ui.tabs",
+    "jquery-ui/ui/widgets/sortable": "global:jQuery.ui.sortable",
+    "jquery-ui/ui/widgets/draggable": "global:jQuery.ui.draggable",
+    "jquery-ui/ui/widgets/droppable": "global:jQuery.ui.droppable",
+    "jquery-ui/ui/widgets/spinner": "global:jQuery.ui.spinner",
+    "jquery-ui/ui/widgets/tabs": "global:jQuery.ui.tabs",
     "knockout": "global:ko",
     "knockout-jqueryui": "global:kojqui",
     "tinymce": "global:tinymce"
   },
-  "devDependencies": {
-    "aliasify": "^1.7.2",
-    "async": "0.9.0",
-    "autoprefixer-core": "5.2.1",
-    "body-parser": "1.13.3",
-    "bower": "1.4.1",
-    "bower-npm-install": "0.5.10",
-    "browserify": "11.0.1",
-    "browserify-shim": "3.8.10",
-    "cheerio": "0.19.0",
-    "connect-livereload": "0.5.3",
-    "csswring": "3.0.7",
-    "deamdify": "0.1.1",
-    "debowerify": "1.2.0",
-    "express": "^4.13.3",
-    "gm": "1.18.1",
-    "grunt": "0.4.5",
-    "grunt-bowercopy": "1.2.0",
-    "grunt-browserify": "4.0.0",
-    "grunt-contrib-connect": "0.9.0",
-    "grunt-contrib-copy": "^0.8.1",
-    "grunt-contrib-jshint": "0.11.2",
-    "grunt-contrib-less": "1.0.1",
-    "grunt-contrib-watch": "0.6.1",
-    "grunt-exorcise": "2.0.0",
-    "grunt-express": "1.4.0",
-    "grunt-jasmine-node-coverage": "0.4.1",
-    "grunt-newer": "1.1.1",
-    "grunt-postcss": "0.6.0",
-    "jasmine-core": "2.3.4",
-    "jasmine-node": "1.14.5",
-    "jquery-file-upload-middleware": "0.1.7",
-    "jshint-stylish": "2.0.1",
-    "load-grunt-tasks": "3.1.0",
-    "lodash": "3.10.1",
-    "mockery": "1.4.0",
-    "morgan": "1.6.1",
-    "nodemailer": "1.4.0",
-    "phantomjs": "1.9.16",
-    "uglifyify": "3.0.1",
-    "watchify": "3.3.1"
+  "dependencies": {
+    "blueimp-canvas-to-blob": "3.27.0",
+    "blueimp-file-upload": "10.30.1",
+    "blueimp-load-image": "5.12.0",
+    "console-browserify": "^1.2.0",
+    "default-passive-events": "^1.0.10",
+    "evol-colorpicker": "^3.4.2",
+    "font-awesome": "^4.7.0",
+    "jquery": "^3.5.1",
+    "jquery-migrate": "^3.3.0",
+    "jquery-ui-package": "1.11.4",
+    "jquery-ui-touch-punch": "^0.2.3",
+    "jquery.iframe-transport": "^1.0.0",
+    "jsep": "^0.3.4",
+    "juice": "^6.0.0",
+    "knockout": "3.5.1",
+    "knockout-jqueryui": "2.2.4",
+    "knockout-sortable": "^1.2.0",
+    "ko-reactor": "^1.4.2",
+    "mensch": "^0.3.4",
+    "slick": "1.12.2",
+    "tinycolor2": "1.4.1",
+    "tinymce": "4.5.8",
+    "toastr": "^2.1.4"
   },
+  "devDependencies": {
+    "aliasify": "2.1.0",
+    "async": "3.2.0",
+    "autoprefixer": "9.8.0",
+    "body-parser": "1.19.0",
+    "browserify": "16.5.1",
+    "browserify-incremental": "3.1.1",
+    "browserify-shim": "3.8.14",
+    "browserify-versionify": "^1.0.6",
+    "cheerio": "1.0.0-rc.3",
+    "connect-livereload": "0.6.1",
+    "csswring": "7.0.0",
+    "express": "4.17.1",
+    "gm": "1.23.1",
+    "grunt": "^1.1.0",
+    "grunt-browserify": "5.3.0",
+    "grunt-contrib-clean": "2.0.0",
+    "grunt-contrib-compress": "1.3.0",
+    "grunt-contrib-copy": "1.0.0",
+    "grunt-contrib-cssmin": "3.0.0",
+    "grunt-contrib-jshint": "2.1.0",
+    "grunt-contrib-less": "2.0.0",
+    "grunt-contrib-uglify": "4.0.1",
+    "grunt-contrib-watch": "1.1.0",
+    "grunt-exorcise": "2.1.1",
+    "grunt-express-server": "0.5.4",
+    "grunt-google-fonts": "^0.5.0",
+    "grunt-jasmine-node-coverage": "2.0.1",
+    "grunt-keepalive": "^1.0.0",
+    "grunt-newer": "^1.3.0",
+    "grunt-parallel": "0.5.1",
+    "grunt-postcss": "0.9.0",
+    "grunt-release": "0.13.1",
+    "jasmine-core": "3.5.0",
+    "jquery-file-upload-middleware": "0.1.8",
+    "jshint-stylish": "2.2.1",
+    "license-checker": "25.0.1",
+    "load-grunt-tasks": "5.1.0",
+    "lodash": "^4.17.15",
+    "mockery": "2.1.0",
+    "nodemailer": "6.4.8",
+    "npm-force-resolutions": "0.0.3"
+  },
+  "browserslist": [
+    "last 2 versions",
+    "not dead",
+    "> 1%",
+    "IE 10",
+    "IE 11"
+  ],
   "author": "Stefano Bagnara",
-  "license": "GPL",
+  "license": "GPL-3.0",
+  "licenseurl": "https://www.gnu.org/licenses/gpl-3.0.en.html",
+  "resolutions": {
+    "superagent": "5.2.2",
+    "websocket-extensions": "0.1.4",
+    "handlebars": "4.7.6"
+  },
   "scripts": {
-    "postinstall": "bower-npm-install --non-interactive",
-    "deps": "bower-npm-install --non-interactive",
+    "start": "grunt",
+    "lockdeps": "npx npm-force-resolutions",
     "test": "grunt jasmine_node"
+  },
+  "engines": {
+    "node": ">= 8.0.0",
+    "npm": ">= 6.0.0"
   }
 }

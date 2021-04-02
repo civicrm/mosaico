@@ -10,7 +10,7 @@ var _getOptionsObject = function(options) {
   var opts = {};
   for (var i = 0; i < optionsCouples.length; i++) {
     var opt = optionsCouples[i].split('=');
-    opts[opt[0]] = opt.length > 1 ? opt[1] : opt[0];
+    opts[opt[0].trim()] = opt.length > 1 ? opt[1].trim() : opt[0].trim();
   }
   return opts;
 };
@@ -107,11 +107,19 @@ var _propInput = function(model, prop, propAccessor, editType, widgets) {
     // maybe we should expose "step" as a configuration, too
     var min = 0;
     var max = 1000;
+    var step;
     if (model !== null && typeof model._max !== 'undefined') max = model._max;
     if (model !== null && typeof model._min !== 'undefined') min = model._min;
-    var step = (max - min) >= 100 ? 10 : 1;
+    if (model !== null && typeof model._step !== 'undefined') step = model._step;
+    else step = (max - min) >= 100 ? 10 : 1;
     var page = step * 5;
-    html += '<input class="number-spinner" size="7" step="' + step + '" type="number" value="-1" data-bind="spinner: { min: ' + min + ', max: ' + max + ', page: ' + page + ', value: ' + propAccessor + ' }, valueUpdate: [\'change\', \'spin\']' + ', ' + onfocusbinding + '" />';
+    html += '<!-- ko letproxy: { prop: ' + propAccessor + ' } -->';
+    html += '<div style="width: 58%; display: inline-block;">';
+    html += '<input class="number-slider" step="' + step + '" min="' + min + '" max="' + max + '" type="range" value="-1" data-bind="textInput: prop, ' + onfocusbinding + '" />';
+    html += '</div><div style="width: 38%; display: inline-block; float: right;">';
+    html += '<input class="number-spinner" size="7" step="' + step + '" type="number" value="-1" data-bind="spinner: { min: ' + min + ', max: ' + max + ', page: ' + page + ', value: prop }, valueUpdate: [\'change\', \'spin\']' + ', ' + onfocusbinding + '" />';
+    html += '</div>';
+    html += '<!-- /ko -->';
   } else {
     html += '<input size="7" type="text" value="nothing" data-bind="value: ' + propAccessor + ', ' + onfocusbinding + '" />';
   }
@@ -135,7 +143,7 @@ var _propEditor = function(withBindingProvider, widgets, templateUrlConverter, m
   if (typeof level == 'undefined') level = 0;
 
   if (typeof prop !== 'undefined' && typeof model == 'object' && model !== null && typeof model._usecount === 'undefined') {
-    console.log("TODO EDITOR ignoring", path, "property because it is not used by the template", "prop:", prop, "type:", editType, "level:", level, withBindingProvider._templateName);
+    if (typeof console.debug == 'function') console.debug("Ignoring", path, "property because it is not used by the template", "prop:", prop, "type:", editType, "level:", level, withBindingProvider._templateName);
     return "";
   }
 
@@ -175,10 +183,10 @@ var _propEditor = function(withBindingProvider, widgets, templateUrlConverter, m
 
   if (typeof prop != 'undefined' && (model === null || typeof model._name == 'undefined')) {
     // TODO throw exception?
-    console.log("TODO WARN Missing label for property ", prop);
+    console.log("Missing label for property ", prop);
   }
-  if (typeof prop == 'undefined' && model !== null && typeof model._name == 'undefined') {
-    console.log("TODO WARN Missing label for object ", model.type /*, model */ );
+  if (typeof prop == 'undefined' && model !== null && typeof model._name == 'undefined' && model.type !== 'theme') {
+    console.log("Missing label for object ", model.type /*, model */ );
   }
 
   if (typeof model == 'object' && model !== null && typeof model._widget == 'undefined') {
@@ -201,7 +209,7 @@ var _propEditor = function(withBindingProvider, widgets, templateUrlConverter, m
       if (typeof themeModel !== 'undefined' && themeModel !== null && typeof themeModel._name !== 'undefined') {
         themeSectionName = themeModel._name;
       } else {
-        console.log("TODO missing label for theme section ", prop, model !== null ? model.type : '-');
+        console.log("Missing label for theme section ", prop, model !== null ? model.type : '-');
       }
 
       modelName = '<span class="blockSelectionMethod" data-bind="text: customStyle() ? $root.ut(\'template\', \'' + utils.addSlashes(modelName) + '\') : $root.ut(\'template\', \'' + utils.addSlashes(themeSectionName) + '\')">Block</span>';

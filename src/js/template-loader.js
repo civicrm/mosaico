@@ -9,6 +9,8 @@ var console = require("console");
 var initializeViewmodel = require("./viewmodel.js");
 var templateSystem = require('./bindings/choose-template.js');
 
+if (!$.ui.version.match(/^1\.11\..*$/)) throw "Usupported jQuery UI version detected: "+$.ui.version+" (we only support 1.11.*)";
+
 // call a given method on every plugin implementing it.
 // supports a "reverse" parameter to call the methods from the last one to the first one.
 var pluginsCall = function(plugins, methodName, args, reverse) {
@@ -40,7 +42,8 @@ ko.utils.domNodeDisposal.addDisposeCallback = function(node, callback) {
     try {
       callback(node);
     } catch (e) {
-      console.log("cought dispose callback exception", e);
+      // this wrapper catches "expected" exceptions
+      if (typeof console.debug == 'function') console.debug("Caught unexpected dispose callback exception", e);
     }
   };
   origDisposeCallback(node, newCallback);
@@ -52,7 +55,7 @@ var bindingPluginMaker = function(performanceAwareCaller) {
       try {
         performanceAwareCaller('applyBindings', ko.applyBindings.bind(undefined, viewModel));
       } catch (err) {
-        console.log(err, err.stack);
+        console.warn(err, err.stack);
         throw err;
       }
     },
@@ -60,7 +63,7 @@ var bindingPluginMaker = function(performanceAwareCaller) {
       try {
         performanceAwareCaller('unapplyBindings', ko.cleanNode.bind(this, global.document.body));
       } catch (err) {
-        console.log(err, err.stack);
+        console.warn(err, err.stack);
         throw err;
       }
     }
@@ -280,15 +283,16 @@ var templateCompiler = function(performanceAwareCaller, templateUrlConverter, te
 
   viewModel.metadata = metadata;
   // let's run some version check on template and editor used to build the model being loaded.
-  var editver = '0.14.0';
+  // This will be replaced by browserify-versionify during the build
+  var editver = '__VERSION__';
   if (typeof viewModel.metadata.editorversion !== 'undefined' && viewModel.metadata.editorversion !== editver) {
-    console.warn("The model being loaded has been created with an older editor version", viewModel.metadata.editorversion, "vs", editver);
+    console.log("The model being loaded has been created with a different editor version", viewModel.metadata.editorversion, "runtime:", editver);
   }
   viewModel.metadata.editorversion = editver;
 
   if (typeof templateDef.version !== 'undefined') {
     if (typeof viewModel.metadata.templateversion !== 'undefined' && viewModel.metadata.templateversion !== templateDef.version) {
-      console.error("The model being loaded has been created with a different template version", templateDef.version, "vs", viewModel.metadata.templateversion);
+      console.log("The model being loaded has been created with a different template version", viewModel.metadata.templateversion, "runtime:", templateDef.version);
     }
     viewModel.metadata.templateversion = templateDef.version;
   }
@@ -327,12 +331,17 @@ var templateCompiler = function(performanceAwareCaller, templateUrlConverter, te
 
 var checkFeature = function(feature, func) {
   if (!func()) {
-    console.warn("Missing feature", feature);
-    throw "Missing feature " + feature;
+    console.warn("Missing required browser feature", feature);
+    throw "Missing required browser feature: " + feature;
   }
 };
 
-var isCompatible = function() {
+/**
+ * Check if the current browser provides the required features to run mosaico.
+ * Returns true/false unless "detailedException" parameter is true:
+ * in this case returns true or an exception with the problem detail.
+ */
+var isCompatible = function(detailedException) {
   try {
     // window.msMatchMedia would match also IE9
     // IE9 wouldn't be so hard to support, but it doesn't worth it. (preview iframe and automatic scroll are 2 things not working in IE9)
@@ -365,6 +374,7 @@ var isCompatible = function() {
     checkBadBrowserExtensions();
     return true;
   } catch (exception) {
+    if (detailedException) throw exception;
     return false;
   }
 };
@@ -372,7 +382,7 @@ var isCompatible = function() {
 var checkBadBrowserExtensions = function() {
   var id = 'checkbadbrowsersframe';
   var origTpl = ko.bindingHandlers.bindIframe.tpl;
-  ko.bindingHandlers.bindIframe.tpl = "<!DOCTYPE html>\r\n<html>\r\n<head><title>A</title>\r\n</head>\r\n<body><p style=\"color: blue\" align=\"right\" data-bind=\"style: { color: 'red' }\">B</p><div data-bind=\"text: content\"></div></body>\r\n</html>\r\n";
+  ko.bindingHandlers.bindIframe.tpl = "<!DOCTYPE html>\r\n<html>\r\n<head><title>A</title>\r\n</head>\r\n<body><p align=\"right\" data-bind=\"attr: { align: 'left' }\">B</p><div data-bind=\"text: content\"></div></body>\r\n</html>\r\n";
   $('body').append('<iframe id="' + id + '" data-bind="bindIframe: $data"></iframe>');
   var frameEl = global.document.getElementById(id);
   ko.applyBindings({ content: "dummy content" }, frameEl);
@@ -388,13 +398,14 @@ var checkBadBrowserExtensions = function() {
   ko.removeNode(frameEl);
   ko.bindingHandlers.bindIframe.tpl = origTpl;
 
-  var expected = "<!DOCTYPE html>\n<html><head><title>A</title>\n</head>\n<body><p align=\"right\" style=\"color: red;\" data-bind=\"style: { color: 'red' }\">B</p><div data-bind=\"text: content\">dummy content</div>\n\n</body></html>";
-  var expected2 = "<!DOCTYPE html>\n<html><head><title>A</title>\n</head>\n<body><p style=\"color: red;\" data-bind=\"style: { color: 'red' }\" align=\"right\">B</p><div data-bind=\"text: content\">dummy content</div>\n\n</body></html>";
-  var expected3 = "<!DOCTYPE html>\n<html><head><title>A</title>\n</head>\n<body><p style=\"color: red;\" align=\"right\" data-bind=\"style: { color: 'red' }\">B</p><div data-bind=\"text: content\">dummy content</div>\n\n</body></html>";
-  if (expected !== content && expected2 !== content && expected3 !== content) {
-    console.log("BadBrowser.FrameContentCheck", content.length, expected.length, expected2.length, expected3.length, content == expected, content == expected2, content == expected3);
-    console.log(content);
-    throw "Unexpected frame content. Misbehaving browser: "+content.length+"/"+expected.length+"/"+expected2.length+"/"+expected3.length;
+  var expected = "<!DOCTYPE html>\n<html><head><title>A</title>\n</head>\n<body><p align=\"left\" data-bind=\"attr: { align: 'left' }\">B</p><div data-bind=\"text: content\">dummy content</div>\n\n</body></html>";
+  // Firefox changes the attributes order.
+  var expected2 = "<!DOCTYPE html>\n<html><head><title>A</title>\n</head>\n<body><p data-bind=\"attr: { align: 'left' }\" align=\"left\">B</p><div data-bind=\"text: content\">dummy content</div>\n\n</body></html>";
+  if (expected !== content && expected2 !== content) {
+    console.info("BadBrowser.FrameContentCheck", content.length, expected.length, expected2.length, content == expected, content == expected2);
+    console.warn("Detected incompatible/misbehaving browser, probably introduced by a bad browser extension.");
+    console.warn(content);
+    throw "Detected misbehaving browser/extension: unexpected frame content.";
   }
 };
 
