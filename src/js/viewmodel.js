@@ -47,7 +47,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     debug: ko.observable(false),
     contentListeners: ko.observable(0),
     
-    logoPath: 'rs/img/mosaico32.png',
+    logoPath: '//mosaico.io/dist/img/mosaico32.png',
     logoUrl: '.',
     logoAlt: 'mosaico'
   };
