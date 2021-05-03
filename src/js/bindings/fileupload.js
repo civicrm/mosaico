@@ -238,6 +238,7 @@ ko.bindingHandlers['fileupload'] = {
           // File type not allowed
           // File is too large
           if (options.onerror) {
+            $(element).val('');
             options.onerror(translatedMessage(file.error));
           }
           cleanup();
