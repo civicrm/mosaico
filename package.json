@@ -68,16 +68,21 @@
     "mockery": "1.4.0",
     "morgan": "1.6.1",
     "nodemailer": "1.4.0",
-    "phantomjs": "1.9.16",
+    "phantomjs-prebuilt": "2.1.16",
     "slick": "^1.12.2",
     "uglifyify": "3.0.1",
-    "watchify": "3.3.1"
+    "watchify": "3.3.1",
+    "npm-force-resolutions": "0.0.3"
   },
   "author": "Stefano Bagnara",
   "license": "GPL",
   "scripts": {
+    "preinstall": "npx npm-force-resolutions",
     "postinstall": "bower-npm-install --non-interactive",
     "deps": "bower-npm-install --non-interactive",
     "test": "grunt jasmine_node"
+  },
+  "resolutions": {
+    "graceful-fs": "^4.2.6"
   }
 }
