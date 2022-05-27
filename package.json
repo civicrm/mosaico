@@ -80,6 +80,8 @@
     "preinstall": "npx npm-force-resolutions",
     "postinstall": "bower-npm-install --non-interactive",
     "deps": "bower-npm-install --non-interactive",
+    "build": "grunt build",
+    "tarball": "[ -f mosaico-dist.tar.gz ] && rm -f mosaico-dist.tar.gz ; tar --transform 's;^;mosaico/;' -czf mosaico-dist.tar.gz NOTICE.txt LICENSE README.md favicon.ico build dist res templates",
     "test": "grunt jasmine_node"
   },
   "resolutions": {
