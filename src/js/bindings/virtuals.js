@@ -4,32 +4,6 @@
 var ko = require("knockout");
 var console = require("console");
 
-ko.bindingHandlers['uniqueId'] = {
-  currentIndex: 0,
-  'init': function(element, valueAccessor) {
-    var data = ko.utils.unwrapObservable(valueAccessor()) || {};
-    if (data.id() === '') {
-      var id, el, prefix;
-      // TODO we need a better prefix
-      prefix = 'ko_' + (typeof data.type !== 'undefined' ? ko.utils.unwrapObservable(data.type) : 'block');
-      // when loading an exising model, IDs could be already assigned.
-      do {
-        id = prefix + '_' + (++ko.bindingHandlers['uniqueId'].currentIndex);
-        el = global.document.getElementById(id);
-        if (el) {
-          // when loading an existing model my "currentIndex" is empty.
-          // but we have existing blocks, so I must be sure I don't reuse their IDs.
-          // We use different prefixes (per block type) so that a hidden block 
-          // (for which we have no id in the page, e.g: preheader in versafix-1)
-          // will break everthing once we reuse its name.
-        }
-      } while (el);
-      data.id(id);
-    }
-  }
-};
-ko.virtualElements.allowedBindings['uniqueId'] = true;
-
 ko.bindingHandlers['virtualAttr'] = {
   update: function(element, valueAccessor) {
     if (element.nodeType !== 8) {
@@ -39,14 +13,36 @@ ko.bindingHandlers['virtualAttr'] = {
 };
 ko.virtualElements.allowedBindings['virtualAttr'] = true;
 
-ko.bindingHandlers['virtualAttrStyle'] = {
+var _objectToStyle = function(obj) {
+  var res = false;
+  for (var prop in obj) if (obj.hasOwnProperty(prop)) {
+    var val = ko.utils.unwrapObservable(obj[prop]);
+    if (val !== null) {
+      if (res == false) res = ''; else res += '; ';
+      // ignore everything after the $ (so to support repeated properties)
+      res += prop.split('$')[0] + ': ' + val;
+    }
+  }
+  // in past our style attrs always ended with ";", so this like would preserve that behaviour.
+  // if (res) return res+";";
+  return res;
+};
+
+/**
+ * We use this binding instead of the style binding because we want better control on the specific style attribute output.
+ * This receive an ordered object of css properties pointing to their values and laso supporting "null" to remove the property
+ * as if it wasn't in the object.
+ * 
+ * The property names could be $something suffixed so to be able to declare the same property multiple times.
+ */
+ko.bindingHandlers['virtualAttrStyles'] = {
   update: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
     if (element.nodeType !== 8) {
       // In "preview" we also set "replacedstyle" so to have an attribute to be used by IE (IE breaks the STYLE) to do the export.
       var isNotWysiwygMode = (typeof bindingContext.templateMode == 'undefined' || bindingContext.templateMode != 'wysiwyg');
       var attrs = ["style"];
       if (isNotWysiwygMode) attrs.push("replacedstyle");
-      var attrValue = ko.utils.unwrapObservable(valueAccessor());
+      var attrValue = _objectToStyle(valueAccessor());
       for (var i = 0; i < attrs.length; i++) {
         var attrName = attrs[i];
         var toRemove = (attrValue === false) || (attrValue === null) || (attrValue === undefined);
@@ -58,7 +54,7 @@ ko.bindingHandlers['virtualAttrStyle'] = {
     }
   }
 };
-ko.virtualElements.allowedBindings['virtualAttrStyle'] = true;
+ko.virtualElements.allowedBindings['virtualAttrStyles'] = true;
 
 ko.bindingHandlers['virtualStyle'] = {
   update: function(element, valueAccessor) {

@@ -6,12 +6,11 @@ var modelDef = require("./model.js");
 var wrappedResultModel = function(templateDef) {
   var defs = templateDef._defs;
   var templateName = templateDef.templateName;
-  var finalModelContentDef = modelDef.getDef(defs, templateName);
 
   var finalModelContent = modelDef.generateResultModel(templateDef);
 
   var wrapper = require("./wrapper.js");
-  var res = wrapper(finalModelContent, finalModelContentDef, defs);
+  var res = wrapper(defs, finalModelContent);
 
   return res;
 };
@@ -33,10 +32,17 @@ var checkModel = function() {
   return cm.apply(cm, arguments);
 };
 
+var checkDefs = function() {
+  var cd = require('./checkdefs.js');
+  return cd.apply(cd, arguments);
+};
+
 module.exports = {
   translateTemplate: translateTemplate,
   wrappedResultModel: wrappedResultModel,
   generateResultModel: modelDef.generateResultModel,
+  generateBlockModels: modelDef.generateBlockModels,
   generateEditors: generateEditors,
-  checkModel: checkModel
+  checkModel: checkModel,
+  checkDefs: checkDefs
 };

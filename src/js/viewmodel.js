@@ -4,7 +4,6 @@
 var $ = require("jquery");
 var ko = require("knockout");
 var console = require("console");
-var performanceAwareCaller = require("./timed-call.js").timedCall;
 
 var toastr = require("toastr");
 toastr.options = {
@@ -20,105 +19,11 @@ toastr.options = {
   "showEasing": "swing",
   "hideEasing": "linear",
   "showMethod": "fadeIn",
-  "hideMethod": "fadeOut"
+  "hideMethod": "fadeOut",
+  "escapeHtml": "true" // XSS
 };
 
-/* NOTE: translations moved to "plugin"
-var strings = {
-  'show preview and send test': 'Visualizza una anteprima e fai un invio di test',
-  // Strings for app.js
-  'Download': 'Download',
-  'Test': 'Test',
-  'Save': 'Salva',
-  'Downloading...': "Download in corso...",
-  'Invalid email address': "Indirizzo email invalido",
-  "Test email sent...": "Email di test inviata...",
-  'Unexpected error talking to server: contact us!': 'Errore di comunicazione con il server: contattaci!',
-  'Insert here the recipient email address': 'Inserisci qui l\'indirizzo email a cui spedire',
-  "Test email address": "Indirizzo email di test",
-  // viewModel
-  'Block removed: use undo button to restore it...': 'Blocco eliminato: usa il pulsante annulla per recuperarlo...',
-  'New block added after the selected one (__pos__)': 'Nuovo blocco aggiunto sotto a quello selezionato (__pos__)',
-  'New block added at the model bottom (__pos__)': 'Nuovo blocco aggiunto in fondo al modello (__pos__)',
-  // undomain.js
-  'Undo (#COUNT#)': 'Annulla (#COUNT#)',
-  'Redo': 'Ripristina',
-  // editor.js
-  'Selected element has no editable properties': 'L\'elemento selezionato non fornisce proprietà editabili',
-  'This style is specific for this block: click here to remove the custom style and revert to the theme value': 'Questo stile è specifico di questo blocco: clicca qui per annullare lo stile personalizzato',
-  'Switch between global and block level styles editing': 'Permette di specificare se si vuole modificare lo stile generale o solamente quello specifico del blocco selezionato',
-  // main.tpl.html
-  'Undo last operation': 'Annulla ultima operazione',
-  'Redo last operation': 'Ripeti operazione annullata',
-  'Show image gallery': 'Visualizza galleria immagini',
-  'Gallery': 'Galleria',
-  'Preview': 'Anteprima',
-  'Show live preview': 'Mostra anteprima live',
-  'Large screen': 'Schermo grande',
-  'Tablet': 'Tablet',
-  'Smartphone': 'Smartphone',
-  'Show preview and send test': 'Visualizza una anteprima e fai un invio di test',
-  'Download template': 'Scarica il template',
-  'Save template': 'Salva il template',
-  'Saved model is obsolete': 'Modello salvato obsoleto',
-  '<p>The saved model has been created with a previous, non completely compatible version, of the template</p><p>Some content or style in the model <b>COULD BE LOST</b> if you will <b>save</b></p><p>Contact us for more informations!</p>': '<p>Il modello salvato è stato creato con una versione precedente del template non del tutto compatibile</p><p>Alcuni contenuti o stili del modello <b>POTREBBERO ESSERE PERSI</b> se procederai e deciderai di <b>salvare</b></p><p>Contattaci se hai dei dubbi!</p>',
-
-  // TODO this cannot be done in knockout as with uncompatible browsers we don't initialize
-  // 'Usupported browser': 'Browser non compatibile', 
-  // '<p>Your browser is not supported.</p><p>Use a different browser or try updaring your browser.</p><p>Supported browsers: <ul><li>Internet Explorer &gt;= 10</li><li>Google Chrome &gt;= 30</li><li>Apple Safari &gt;= 5</li><li>Mozilla Firefix &gt;= 20</li></ul></p>': '<p>Il tuo browser non è supportato.</p><p>Accedi con un browser differente o prova ad aggiornare il tuo browser.</p><p>Browser supportati: <ul><li>Internet Explorer &gt;= 10</li><li>Google Chrome &gt;= 30</li><li>Apple Safari &gt;= 5</li><li>Mozilla Firefix &gt;= 20</li></ul></p>',
-
-  // toolbox
-  'Blocks': 'Blocchi',
-  'Blocks ready to be added to the template': 'Elenco contenuti aggiungibili al messaggio',
-  'Content': 'Contenuto',
-  'Edit content options': 'Modifica opzioni contenuti',
-  'Style': 'Stile',
-  'Edit style options': 'Modifica opzioni grafiche',
-  'Block __name__': 'Blocco __name__',
-  'Click or drag to add this block to the template': 'Clicca o trascina per aggiungere al messaggio',
-  'Add': 'Aggiungi',
-  'By clicking on message parts you will select a block and content options, if any, will show here': 'Cliccando su alcune parti del messaggio selezionerai un blocco e le opzioni contenutistiche, se disponibili, compariranno qui',
-  'By clicking on message parts you will select a block and style options, if available, will show here': 'Cliccando su alcune parti del messaggio selezionerai un blocco e le opzioni di stile, se disponibili, compariranno qui',
-  'Click or drag files here': 'Clicca o trascina i file qui!',
-  'No images uploaded, yet': 'Non hai ancora caricato immagini',
-  'Show images from the gallery': 'Visualizza le immagini caricate nella tua area',
-  'Loading...': 'Caricamento...',
-  'Load gallery': 'Carica galleria',
-  'Loading gallery...': 'Caricamento in corso...',
-  'The gallery is empty': 'Nessuna immagine nella galleria',
-  // img-wysiwyg.tmlp
-  'Remove image': 'Rimuovi immagine',
-  'Open the image editing tool': 'Avvia strumento modifica immagine',
-  'Upload a new image': 'Carica una nuova immagine',
-  'Drop an image here': 'Trascina una immagine qui',
-  'Drop an image here or click the upload button': 'Trascina una immagine qui o clicca sul pulsante di caricamento',
-  // gallery
-  'Drag this image and drop it on any template image placeholder': 'Trascina questa immagine sulla posizione in cui vuoi inserirla',
-  'Gallery:': 'Galleria:',
-  'Session images': 'Immagini di sessione',
-  'Recents': 'Recenti',
-  'Remote gallery': 'Galleria remota',
-
-  // customstyle
-  'Customized block.<ul><li>In this status changes to properties will be specific to the current block (instead of being global to all blocks in the same section)</li><li>A <span class="customStyled"><span>"small cube" </span></span> icon beside the property will mark the customization. By clicking this icon the property value will be reverted to the value defined for the section.</li></ul>': 'Blocco personalizzato.<ul><li>In questa modalità se cambi una proprietà verrà modificata solamente per questo specifico blocco (invece che per tutti i blocchi della stessa sezione).</li><li>Per segnalare la personalizzazione apparirà l\'icona <span class="customStyled"><span> del "cubetto"</span></span> a fianco delle proprietà. Cliccando questa icona tornerai al valore comune.</li></ul>',
-  // blocks-wysiwyg
-  'Drop here blocks from the "Blocks" tab': 'Trascina qui i blocchi dalla scheda \'Blocchi\'',
-  // block-wysiwyg
-  'Drag this handle to move the block': 'Trascina per spostare il blocco altrove',
-  'Move this block upside': 'Sposta il blocco in su',
-  'Move this block downside': 'Sposta il blocco in giu',
-  'Delete block': 'Elimina blocco',
-  'Duplicate block': 'Duplica blocco',
-  'Switch block variant': 'Cambia variante blocco',
-  // colorpicker
-  'Theme Colors,Standard Colors,Web Colors,Theme Colors,Back to Palette,History,No history yet.': 'Colori Tema,Colori Standard,Colori Web,Colori Tema,Torna alla tavolozza,Storico,storico colori vuoto',
-
-  'Drop here': 'Rilascia qui',
-
-};
-*/
-
-function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
+function initializeEditor(content, blocks, thumbPathConverter, galleryUrl, contentModelImporter, exportCleanedHTML) {
 
   var viewModel = {
     galleryRecent: ko.observableArray([]).extend({
@@ -129,9 +34,11 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     }),
     selectedBlock: ko.observable(null),
     selectedItem: ko.observable(null),
+    selectedImage: ko.observable(null),
     selectedTool: ko.observable(0),
     selectedImageTab: ko.observable(0),
     dragging: ko.observable(false),
+    resizing: ko.observable(false),
     draggingImage: ko.observable(false),
     galleryLoaded: ko.observable(false),
     showPreviewFrame: ko.observable(false),
@@ -142,15 +49,15 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     debug: ko.observable(false),
     contentListeners: ko.observable(0),
     
-    logoPath: 'dist/img/mosaico32.png',
+    logoPath: 'rs/img/mosaico32.png',
     logoUrl: '.',
     logoAlt: 'mosaico'
   };
 
   // viewModel.content = content._instrument(ko, content, undefined, true);
   viewModel.content = content;
-  viewModel.blockDefs = blockDefs;
-
+  viewModel.blocks = blocks;
+  
   viewModel.notifier = toastr;
 
   // Does token substitution in i18next style
@@ -211,16 +118,22 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     return obj.url;
   };
 
+  // This is used to remove a block from a container or to hide a fixed block using the "visibility" property
   // block-wysiwyg.tmpl.html
   viewModel.removeBlock = function(data, parent) {
     // let's unselect the block
     if (ko.utils.unwrapObservable(viewModel.selectedBlock) == ko.utils.unwrapObservable(data)) {
       viewModel.selectBlock(null, true);
     }
-    var res = parent.blocks.remove(data);
-    // TODO This message should be different depending on undo plugin presence.
-    viewModel.notifier.info(viewModel.t('Block removed: use undo button to restore it...'));
-    return res;
+    if (typeof data._switchVisibility == 'function') {
+      data._switchVisibility();
+      viewModel.notifier.info(viewModel.t('Block removed: use the visibility flag in the content tab to restore it...'));
+    } else if (typeof parent !== 'undefined' && parent !== null) {
+      var res = parent.blocks.remove(data);
+      // TODO This message should be different depending on undo plugin presence.
+      viewModel.notifier.info(viewModel.t('Block removed: use undo button to restore it...'));
+      return res;
+    }
   };
 
   // block-wysiwyg.tmpl.html
@@ -250,22 +163,24 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
 
   // test method, command line use only
   viewModel.loadDefaultBlocks = function() {
-    // cloning the whole "mainBlocks" object so that undomanager will
-    // see it as a single operation (maybe I could use "startMultiple"/"stopMultiple".
-    var res = ko.toJS(viewModel.content().mainBlocks);
-    res.blocks = [];
-    var input = ko.utils.unwrapObservable(viewModel.blockDefs);
+    var input = viewModel.blocks;
+    // Make sure undomanager consider this as a single action.
+    viewModel.startMultiple();
+    // empty the mainblock container
+    viewModel.content().mainBlocks().blocks.splice(0, viewModel.content().mainBlocks().blocks().length);
+    // add each block
     for (var i = 0; i < input.length; i++) {
-      var obj = ko.toJS(input[i]);
-      // generating ids for blocks, maybe this would work also leaving it empty.
-      obj.id = 'block_' + i;
-      res.blocks.push(obj);
+      viewModel.content().mainBlocks().blocks.push(input[i]);
     }
-    performanceAwareCaller('setMainBlocks', viewModel.content().mainBlocks._wrap.bind(viewModel.content().mainBlocks, res));
+    viewModel.stopMultiple();
   };
 
   // gallery-images.tmpl.html
   viewModel.addImage = function(img) {
+    if (viewModel.selectedImage() !== null) {
+      viewModel.selectedImage()(img.url);
+      return true;
+    }
     var selectedImg = $('#main-wysiwyg-area .selectable-img.selecteditem');
     if (selectedImg.length == 1 && typeof img == 'object' && typeof img.url !== 'undefined') {
       ko.contextFor(selectedImg[0])._src(img.url);
@@ -333,20 +248,6 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     return res;
   };
 
-  /*
-  viewModel.placeholderHelper = 'sortable-placeholder';
-  if (false) {
-    viewModel.placeholderHelper = {
-      element: function(currentItem) {
-        return $('<div />').removeClass('ui-draggable').addClass('sortable-placeholder').css('position', 'relative').css('width', '100%').css('height', currentItem.css('height')).css('opacity', '.8')[0];
-      },
-      update: function(container, p) {
-       return;
-      }
-    };
-  }
-  */
-
   // Attempt to insert the block in the destination layout during dragging
   viewModel.placeholderHelper = {
     element: function(currentItem) {
@@ -357,7 +258,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     }
   };
 
-  // TODO the undumanager should be pluggable.
+  // TODO the undomanager should be pluggable.
   // Used by "moveBlock" and blocks-wysiwyg.tmpl.html to "merge" drag/drop operations into a single undo/redo op.
   viewModel.startMultiple = function() {
     if (typeof viewModel.setUndoModeMerge !== 'undefined') viewModel.setUndoModeMerge();
@@ -373,6 +274,18 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     else prop(null);
     return false;
   };
+  // This is not used right now. Provides an helper method to push a local style to a new theme default value
+  viewModel.localToGlobalSwitch = function(prop, globalProp) {
+    var current = prop();
+    if (current === null) prop(globalProp());
+    else {
+      viewModel.startMultiple();
+      globalProp(current);
+      prop(null);
+      viewModel.stopMultiple();
+    }
+    return false;
+  };
 
   // Used by editor and main "converter" to support item selection
   viewModel.selectItem = function(valueAccessor, item, block) {
@@ -383,6 +296,7 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
       // On selectItem if we were on "Blocks" toolbox tab we move to "Content" toolbox tab.
       if (item !== null && viewModel.selectedTool() === 0) viewModel.selectedTool(1);
     }
+    viewModel.selectedImage(null);
     return false;
   }.bind(viewModel, viewModel.selectedItem);
 
@@ -432,67 +346,13 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     global.setTimeout(viewModel.loopSubscriptionsCount, 1000);
   };
 
-  viewModel.export = function() {
-    var content = performanceAwareCaller("exportHTML", viewModel.exportHTML);
-    return content;
-  };
+  // before 0.18.8 "export" used to log exportHTML timing, but we moved that in the internal exporter function.
+  viewModel.export = viewModel.exportHTML = function() {
+    content = exportCleanedHTML(viewModel);
 
-  function conditional_restore(html) {
-    return html.replace(/<replacedcc[^>]* condition="([^"]*)"[^>]*>([\s\S]*?)<\/replacedcc>/g, function(match, condition, body) {
-      var dd = '<!--[if '+condition.replace(/&amp;/, '&')+']>';
-      dd += body.replace(/<!-- cc:bc:([A-Za-z:]*) -->(<\/cc>)?<!-- cc:ac:\1 -->/g, '</$1>') // restore closing tags (including lost tags)
-            .replace(/><\/cc><!-- cc:sc -->/g, '/>') // restore selfclosing tags
-            .replace(/<!-- cc:bo:([A-Za-z:]*) --><cc/g, '<$1') // restore open tags
-            .replace(/^.*<!-- cc:start -->/,'') // remove content before start
-            .replace(/<!-- cc:end -->.*$/,''); // remove content after end
-      dd += '<![endif]-->';
-      return dd;
-    });
-  }
-
-  viewModel.exportHTML = function() {
-    var id = 'exportframe';
-    $('body').append('<iframe id="' + id + '" data-bind="bindIframe: $data"></iframe>');
-    var frameEl = global.document.getElementById(id);
-    ko.applyBindings(viewModel, frameEl);
-
-    ko.cleanNode(frameEl);
-    if (viewModel.inline) viewModel.inline(frameEl.contentWindow.document);
-
-    // Obsolete method didn't work on IE11 when using "HTML5 doctype":
-    // var docType = new XMLSerializer().serializeToString(global.document.doctype);
-    var node = frameEl.contentWindow.document.doctype;
-    var docType = "<!DOCTYPE " + node.name +
-      (node.publicId ? ' PUBLIC "' + node.publicId + '"' : '') +
-      (!node.publicId && node.systemId ? ' SYSTEM' : '') +
-      (node.systemId ? ' "' + node.systemId + '"' : '') + '>';
-    var content = docType + "\n" + frameEl.contentWindow.document.documentElement.outerHTML;
-    ko.removeNode(frameEl);
-
-    content = content.replace(/<script ([^>]* )?type="text\/html"[^>]*>[\s\S]*?<\/script>/gm, '');
-    // content = content.replace(/<!-- ko .*? -->/g, ''); // sometimes we have expressions like (<!-- ko var > 2 -->)
-    content = content.replace(/<!-- ko ((?!--).)*? -->/g, ''); // this replaces the above with a more formal (but slower) solution
-    content = content.replace(/<!-- \/ko -->/g, '');
-    // Remove data-bind/data-block attributes
-    content = content.replace(/ data-bind="[^"]*"/gm, '');
     // Remove trash leftover by TinyMCE
-    content = content.replace(/ data-mce-(href|src)="[^"]*"/gm, '');
+    content = content.replace(/ data-mce-(href|src|style)="[^"]*"/gm, '');
 
-    // Replace "replacedstyle" to "style" attributes (chrome puts replacedstyle after style)
-    content = content.replace(/ style="[^"]*"([^>]*) replaced(style="[^"]*")/gm, '$1 $2');
-    // Replace "replacedstyle" to "style" attributes (ie/ff have reverse order)
-    content = content.replace(/ replaced(style="[^"]*")([^>]*) style="[^"]*"/gm, ' $1$2');
-    content = content.replace(/ replaced(style="[^"]*")/gm, ' $1');
-
-    // same as style, but for http-equiv (some browser break it if we don't replace, but then we find it duplicated)
-    content = content.replace(/ http-equiv="[^"]*"([^>]*) replaced(http-equiv="[^"]*")/gm, '$1 $2');
-    content = content.replace(/ replaced(http-equiv="[^"]*")([^>]*) http-equiv="[^"]*"/gm, ' $1$2');
-    content = content.replace(/ replaced(http-equiv="[^"]*")/gm, ' $1');
-
-    // We already replace style and http-equiv and we don't need this.
-    // content = content.replace(/ replaced([^= ]*=)/gm, ' $1');
-    // Restore conditional comments
-    content = conditional_restore(content);
     var trash = content.match(/ data-[^ =]+(="[^"]+")? /) || content.match(/ replaced([^= ]*=)/);
     if (trash) {
       console.warn("Output HTML contains unexpected data- attributes or replaced attributes", trash);
@@ -519,17 +379,18 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
   };
 
   viewModel.exportJSON = function() {
-    var json = ko.toJSON(viewModel.content);
-    return json;
+    return ko.toJSON(viewModel.exportJS());
   };
 
   viewModel.exportJS = function() {
-    return ko.toJS(viewModel.content);
+    return viewModel.content._plainObject();
   };
 
   viewModel.importJSON = function(json) {
     var unwrapped = ko.utils.parseJson(json);
-    viewModel.content._wrap(unwrapped);
+    // TODO, we should use checkModel to upgrade the model if it was from a previous template version.
+    // viewModel.content._plainObject(unwrapped);
+    contentModelImporter(unwrapped);
   };
 
   viewModel.exportTheme = function() {
@@ -569,6 +430,14 @@ function initializeEditor(content, blockDefs, thumbPathConverter, galleryUrl) {
     viewModel.galleryRecent.unshift(img);
     // select recent gallery tab
     viewModel.selectedImageTab(0);
+  };
+
+  // you can ovverride this method if you want to browse images using an external tool
+  // if you call _src(yourSrc) you will set a new source for the image.
+  viewModel.selectImage = function(_src) {
+    viewModel.selectedItem(null);
+    viewModel.selectedImage(_src);
+    viewModel.showGallery(true);
   };
 
   viewModel.dialog = function(selector, options) {

@@ -9,7 +9,7 @@
 @font-family: "Noto Sans", "Helvetica Neue", Helvetica, Arial, "Nimbus Sans L", "Liberation Sans", Arimo, sans-serif;
 @standard-border-radius: 2px;
 @info-border-radius: @standard-border-radius;
-@button-border-radius: @standard-border-radius;
+@button-border-radius: 20px;
 @large-balloon-border-radius: 2px; 
 
 @object-background-color: #DDDDDD;
@@ -33,10 +33,16 @@
 
 @ui-tabs-panel-padding: 0;
 
-// @button-hover-background-color: 
+@slider-track-height: 4px;
+@slider-thumb-height: 14px;
 
 .button-style() {
   text-transform: uppercase;
+}
+
+.button-style-focus() {
+  background-color: lighten(@button-background-color, 10%);
+  box-shadow: none;
 }
 
 #main-edit-area .tool {
@@ -47,14 +53,22 @@
 }
 
 #toolbar, #preview-toolbar {
+  .ui-buttonset {
+    &:focus-within {
+      background-color: @mosaico-ui-background-color;
+      box-shadow: none;
+    }
+  }
   .ui-button {
+    border-radius: 0;
     padding-top: 7px;
     padding-bottom: 7px;
     line-height: 22px;
 
     background-color: @mosaico-ui-background-color;
-    &:hover, &.pressed {
+    &:hover, &.pressed, &:focus, &.ui-state-focus {
       background-color: lighten(@mosaico-ui-background-color, 10%);
+      box-shadow: none;
     }
     &.selected, &.ui-state-active {
       border-bottom: 2px solid @button-text-color;
@@ -65,6 +79,10 @@
     }
   }
 } 
+
+#main-toolbox #toolimages .ui-tabs > .ui-tabs-nav > li > a {
+  border-radius: 0;
+}
 
 #main-toolbox #tooltabs.ui-tabs > .ui-tabs-nav {
   box-shadow: 0 0 10px @shadow-color;
@@ -80,6 +98,15 @@
     li {
       margin: 1px 1px 0 0;
       line-height: @topbar-height - 4px;
+
+      &.ui-state-focus {
+        background-color: lighten(@mosaico-ui-background-color, 10%);
+        box-shadow: none;
+      }
+
+      a {
+        border-radius: 0;
+      }
     }
   }
 }
@@ -88,7 +115,7 @@
   box-shadow: 1px 1px 3px @shadow-color;
 }
 
-.tabs-style(@activeclass: ~'.active', @buttonstyle: false) {
+.tabs-style(@activeclass: ~'.active', @buttonstyle: false, @focusclass: ~'.focus') {
 
   text-transform: uppercase;
 
@@ -98,10 +125,18 @@
   }
   li > a when (@buttonstyle) {
     background-color: transparent; 
+    border-radius: 0;
     &:hover {
       background-color: lighten(@mosaico-ui-background-color, 10%);
       border-bottom: 3px solid lighten(@mosaico-ui-background-color, 10%);
     } 
+  }
+
+  li@{focusclass} when (@buttonstyle) {
+    .button-style-focus();
+  }
+  li@{focusclass} when not (@buttonstyle) {
+    .input-style-focus();
   }
 
   li@{activeclass} a {
@@ -111,6 +146,8 @@
       border-bottom: 3px solid @button-text-color;
     } 
   }
+
+
 }
 
 #main-toolbox {
@@ -143,6 +180,10 @@
 
 
   .objEdit .propInput input[type=checkbox] {
+    &:focus + .checkbox-replacer:after {
+      .input-style-focus;
+    }
+  
     &:checked + .checkbox-replacer:before {
       margin-left: 20px;
       background-color: @button-background-color;
@@ -178,12 +219,13 @@
   color: @button-background-color;
 }
 
-.mo .propInput .data-select select {
+.mo .propInput .mo-select select {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
-.mo .propInput .data-select:after {
-  background-color: transparent;
+.mo .propInput .mo-select:after,
+.mo .propInput .data-select .selectize-control.single .selectize-input:after {
+  background-color: transparent !important;
   color: lighten(@text-color, 30%);
 }
 .mo .propInput .evo-pointer:before {
@@ -194,7 +236,8 @@
   background-color: transparent;
   color: lighten(@text-color, 30%);
 }
-.mo .propInput .data-select:hover:after,
+.mo .propInput .mo-select:hover:after,
+.mo .propInput .data-select .selectize-control.single .selectize-input:hover:after,
 .mo .propInput .evo-pointer:hover:before,
 .mo .ui-button.ui-spinner-button.ui-state-hover,
 .mo .propInput .data-integer .ui-button-text,
@@ -307,19 +350,23 @@
   .mo .propInput input[type=number], 
   .mo .propInput input[type=url],
   .mo .propInput select,
-  .mo .propInput .data-select select,
+  .mo .propInput .mo-select select,
+  .mo .propInput .data-select .selectize-control .selectize-input,
   .mo .propInput .ui-spinner .ui-spinner-input {
     border-width: 0 0 2px 0;
     background-color: transparent;
-    &:hover, &:focus {
+    &:hover, &:focus, &.focus {
       border-color: @link-color;
     }
   }
 
+  .mo .propInput .data-color .color-text {
+    float: none;
+  }
   .mo .propInput .data-color input[type=text] {
-    margin-left: 35px;
+    margin-left: 10px;
     &:hover, &:focus {
-      margin-left: 35px;
+      margin-left: 10px;
     }
   }
 
@@ -334,9 +381,46 @@
     }
   }
 
-  // file manager broser button
+  // evo color specific changes for material-like look 
+  .mo .evo-pop {
+    min-width: 250px;
+
+    &:before {
+      display: block;
+      content: "";
+      background-color: rgba(158, 158, 158, 0.19);
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 43px;
+      bottom: 0;
+    }    
+
+    th.ui-widget-content {
+      text-align: center;
+      font-weight: normal;
+    }
+
+    .evo-more {
+      text-align: right;
+      padding: 7px 5px;
+      a {
+        color: @link-color;
+        text-transform: uppercase;
+        font-weight: bold;
+      }
+    }
+
+    .evo-color {
+      padding: 6px 3px 2px 4px;
+    }
+
+  }
+
+  // file manager browser button + buttonsets
+  .mo .propInput .ui-buttonset,
   .mo .propInput .ui-textbutton .ui-textbutton-button {
-    border-radius: 50%;
+    border-radius: @button-border-radius;
     box-shadow: 1px 1px 3px @shadow-color;
   }
 
@@ -348,3 +432,26 @@
     color: @button-text-color;
   }
 } 
+
+// slider
+
+.slider-thumb() {
+  border-radius: 50%;
+  box-shadow: 1px 1px 3px @shadow-color;
+  width: @slider-thumb-height;
+}
+
+.slider-track() {
+  border: 0;
+  background-color: lighten(@text-color, 30%);
+  border-radius: 4px;
+  margin: 2px 0;
+}
+
+.mo {
+  input[type=range].number-slider {
+    &::-ms-thumb {
+      margin-right: 3px; // otherwise Edge crops overflow shadow
+    }
+  }
+}

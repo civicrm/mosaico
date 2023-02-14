@@ -41,24 +41,28 @@ var _reference = function(model, path) {
 
 var _getPath = function(parents, child) {
   var path = "";
+  var len = parents.length;
   var p;
-  for (var k = 0; k <= parents.length; k++) {
+  for (var k = 0; k <= len; k++) {
     p = k < parents.length ? parents[k] : child;
-    if (ko.isObservable(p)) path += '()';
     if (typeof p._fieldName !== 'undefined') {
+      if (ko.isObservable(p)) path += '()';
       path += "." + p._fieldName;
     } else if (k > 0 && typeof parents[k - 1].pop == 'function') {
       var parentArray = ko.isObservable(parents[k - 1]) ? ko.utils.peekObservable(parents[k - 1]) : parents[k - 1];
       var pos = ko.utils.arrayIndexOf(parentArray, p);
       if (pos != -1) {
+        if (ko.isObservable(p)) path += '()';
         path += "[" + pos + "]";
       } else {
         // NOTE this happen, sometimes when TinyMCE sends updates for objects already removed.
         console.error("Unexpected object not found in parent array", parentArray, p, k, parents.length, ko.toJS(parentArray), ko.utils.unwrapObservable(p));
         throw "Unexpected object not found in parent array";
       }
+    } else if (len === 0 && typeof p._fieldName === 'undefined') {
+      // root path
     } else {
-      console.error("Unexpected parent with no _fieldName and no parent array", k, parents);
+      console.error("Unexpected parent with no _fieldName and no parent array", k, parents, typeof p);
       throw "Unexpected parent with no _fieldName and no parent array";
     }
   }
@@ -67,7 +71,8 @@ var _getPath = function(parents, child) {
 
 var makeDereferencedUndoAction = function(undoFunc, model, path, value, item) {
   var child = _reference(model, path);
-  undoFunc(child, value, item);
+  // when we replace the full content (load a new content) or undo the replacement of a full content the child has the _plainObject method.
+  undoFunc(child._plainObject || child, value, item);
 };
 
 var listener;
@@ -81,12 +86,10 @@ var makeUndoActionDereferenced = function(model, undoFunc, parents, child, oldVa
   try {
     var path = _getPath(parents, child);
 
-    // Transform actions in simple JS objects.
-    if (typeof oldVal === 'object' || typeof oldVal === 'function') oldVal = ko.toJS(oldVal);
-    if (typeof item !== 'undefined' && (typeof item.value === 'object' || typeof item.value === 'function')) {
-      var newItem = ko.toJS(item);
-      item = newItem;
-    }
+    /* Debug
+    var check = _reference(model, path);
+    if (check !== child) console.error("Dereferencing error for path", path, parents, item, typeof check, typeof child);
+    */
 
     if (typeof listener !== 'undefined') {
       try {

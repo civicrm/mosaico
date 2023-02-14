@@ -25,8 +25,9 @@
   .noSelectedBlock, .customStyleHelp, .objEmpty, .galleryEmpty {
     font-size: 1.2em;
   }
-  .propInput .data-select::after,
-  .propInput .evo-pointer::before {
+  .propInput .mo-select::after,
+  .propInput .evo-pointer::before,
+  .propInput .selectize-input::after {
     width: 31px;
     padding: 0 10px;
   }
@@ -70,6 +71,8 @@
   @import "style_elements.less"; // (button, dropdown, tooltip, dialog...)
   @import (optional) "style_elements_drupal.less"; // TODO remove me
   @import "style_elements_jquery.less";
+  @import "style_elements_input_range.less";
+  @import "style_elements_selectize.less";
   @import (optional) "style_elements_qtip.less"; // TODO remove me
   
   *,
@@ -80,6 +83,10 @@
     box-sizing: border-box;
   }
   
+  .ui-icon {
+    overflow: visible; // preview icons to select desktop/tablet/smartphone are truncated without this.
+  }
+
   .fa { // reset .fa
     display: inline-block;
     font-style: normal;
@@ -99,7 +106,10 @@
         border: @input-error-border-style;
       }
     }
-    .data-select {
+    .ui-button {
+      margin: 0;
+    }
+    .mo-select {
       display: block;
       .input-select();
     }
@@ -141,7 +151,8 @@
   }
   
   .propEditor {
-    display: table;
+    display: flex;
+    align-items: center;
     width: 100%;
   }
   
@@ -351,12 +362,22 @@
     padding-right: 30px;
   }
 
+  .propInput .data-color .color-select,
+  .propInput .data-color .color-text {
+    display: inline-block;
+  }
+
+  .propInput .data-color color-text {
+    float: right;
+  }
   .propInput .data-color input[type=text] {
     font-size: 90%;
     font-family: monospace;
-    width: 5.5em;
+    // width: 5.5em;
+    width: 8em;
     margin: 0;
-    margin-left: 85px;
+    // margin-left: 85px;
+    margin-left: 60px;
     background-color: transparent;
     border-color: fade(@mosaico-button-border-color, 20%);
     box-shadow: none;
@@ -367,9 +388,11 @@
 
       font-size: 90%;
       font-family: monospace;
-      width: 5.5em;
+      // width: 5.5em;
+      width: 8em;
       margin: 0;
-      margin-left: 85px;
+      // margin-left: 85px;
+      margin-left: 60px;
       /*
       background: none #e4dfcf;
       border-radius: 5px;
@@ -423,10 +446,19 @@
       margin: 0;
 
     }
+
   }
 
   .objEdit input[type=checkbox] {
-    display: none;
+    // make the replacement accessible
+    // display: none;
+    opacity: 0;
+    position: absolute;
+    z-index: -1000;
+
+    &:focus + .checkbox-replacer:before {
+      .button-style-focus;
+    }
   
     & + .checkbox-replacer {
       width: 1.28571429em;
@@ -508,12 +540,41 @@
    * COLOR PICKER
    ***************/
   
+    // this is default but our code above takes precedence
+  .propInput .evo-pointer.evo-transparent,
+  .evo-transparent {
+    @checkersize: 6px;
+    @checkerdark: #BBBBBB;
+    @checkerlight: #F8F8F8;
+    // background-image: repeating-linear-gradient(135deg,black,black 1px,white 1px,white 3px);
+    background-color: @checkerlight;
+    background-image: linear-gradient(45deg, @checkerdark 25%, transparent 25%), linear-gradient(-45deg, @checkerdark 25%, transparent 25%), linear-gradient(45deg, transparent 75%, @checkerdark 75%), linear-gradient(-45deg, transparent 75%, @checkerdark 75%);
+    background-size: (@checkersize * 2) (@checkersize * 2);
+    background-position: 0 0, 0 @checkersize, @checkersize -@checkersize, -@checkersize 0px;
+  }
+
+  // prevent 1px misalignment on firefox
+  .evo-cp-wrap {
+    padding: 0 !important;
+  }
+
   .evo-pop {
     right: 0;
     width: auto;
     .win();
     border-width: 0;
     padding: 3px;
+
+    .ui-widget-content {
+      position: relative;
+
+      .evo-tr-box {
+        position: absolute;
+        top: 4px;
+        padding: 11px;
+        right: 0;
+      }
+    }
 
     .evo-palette td {
       padding: 12px;
@@ -839,6 +900,12 @@
       opacity: 1;
       z-index: 1;
     }
+
+    &:not(:checked):focus + .checkbox-replacer:after,
+    &:checked:focus + .checkbox-replacer:before {
+      .button-style-focus;
+    }
+
 
   }
   

@@ -12,24 +12,17 @@ jsep.addBinaryOp("gt", 7);
 jsep.addBinaryOp("gte", 7);
 
 var addSlashes = function(str) {
-  return str.replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
+  return str.replace(/[\\"'\r\n\t\v\f\b]/g, '\\$&').replace(/\u0000/g, '\\0');
 };
 
-var removeStyle = function(style, startPos, endPos, skipRows, startOffset, endOffset, insert) {
-  var styleRows = style.split("\n");
-  var start = startOffset;
-  var end = endOffset;
-  for (var r = 1 + skipRows; r < startPos.line; r++) start += styleRows[r - 1 - skipRows].length + 1;
-  start += startPos.col;
-  if (endPos !== null) {
-    for (var r2 = 1 + skipRows; r2 < endPos.line; r2++) end += styleRows[r2 - 1 - skipRows].length + 1;
-    end += endPos.col;
-  } else end += style.length + 1;
-  var newStyle = style.substr(0, start - 1) + insert + style.substr(end - 1);
-  return newStyle;
-};
+/**
+ * convert a "Mosaico condition" in a javascript/knockout condition.
+ * bindingProvider is a function to get the javascript/knockout binding for a variable
+ * defVal is a string containing the default value for the condition
+ */
+var conditionBinding = function(expression, bindingProvider, defVal) {
+  var node = jsep(expression);
 
-var expressionGenerator = function(node, bindingProvider, defVal) {
   function mapOperator(op) {
     switch (op) {
       case 'or':
@@ -54,9 +47,7 @@ var expressionGenerator = function(node, bindingProvider, defVal) {
   }
 
   function gen(node, bindingProvider, lookupmember, defVal) {
-    if (typeof lookupmember == 'undefined') lookupmember = true;
-
-    if (typeof defVal !== 'undefined' && node.type !== "Identifier" && node.type !== "MemberExpression") console.log("Cannot apply default value to variable when using expressions");
+    // if (typeof defVal !== 'undefined' && node.type !== "Identifier" && node.type !== "MemberExpression") if (typeof console.debug == 'function') console.debug("Cannot apply default value to variable when using expressions");
 
     if (node.type === "BinaryExpression" || node.type === "LogicalExpression") {
       return '(' + gen(node.left, bindingProvider, lookupmember) + ' ' + mapOperator(node.operator) + ' ' + gen(node.right, bindingProvider, lookupmember) + ')';
@@ -72,7 +63,7 @@ var expressionGenerator = function(node, bindingProvider, defVal) {
       // return gen(node.object) + '[' + gen(node.property) + ']';
     } else if (node.type == 'MemberExpression' && !node.computed) {
       var me = gen(node.object, bindingProvider, false) + '.' + gen(node.property, bindingProvider, false);
-      if (lookupmember && node.object.name !== 'Math' && node.object.name !== 'Color') return bindingProvider(me, defVal) + '()';
+      if (lookupmember && node.object.name !== 'Math' && node.object.name !== 'Color' && node.object.name !== 'Util' && node.object.name !== 'Url') return bindingProvider(me, defVal) + '()';
       return me;
     } else if (node.type === "Literal") {
       return node.raw;
@@ -89,7 +80,7 @@ var expressionGenerator = function(node, bindingProvider, defVal) {
     }
   }
 
-  return gen(node, bindingProvider, undefined, defVal);
+  return gen(node, bindingProvider, true, defVal);
 };
 
 var expressionBinding = function(expression, bindingProvider, defaultValue) {
@@ -102,8 +93,7 @@ var expressionBinding = function(expression, bindingProvider, defaultValue) {
       check = '^' + check.replace(/###var###/g, '(.+)') + '$';
       matches = defaultValue.trim().match(new RegExp(check));
       if (!matches) {
-        // TODO throw error?
-        console.log("Cannot find matches", matches, "for", defaultValue, expression, check, expression);
+        console.error("Cannot find matches", matches, "for", defaultValue, expression, check, expression);
         throw "Cannot find default value for " + expression + " in " + defaultValue;
       }
     }
@@ -120,37 +110,56 @@ var expressionBinding = function(expression, bindingProvider, defaultValue) {
         if (typeof matches[vars] !== 'undefined') {
           defVal = matches[vars].trim();
         } else {
-          console.log("ABZZZ Cannot find default value for", varName, "in", matches, "as", vars);
+          console.log("Cannot find default value for", varName, "in", matches, "as", vars);
+          throw "Cannot find default value for "+varName+" at "+vars;
         }
       }
       // in case we found p1 we are in a @[sequence] so we start an expression parser
       if (p1) {
-        var parsetree = jsep(p1);
-        var gentree = expressionGenerator(parsetree, bindingProvider, defVal);
-        return "'+" + gentree + "+'";
+        return "'+" + conditionBinding(p1, bindingProvider, defVal) + "+'";
       }
       return "'+" + bindingProvider(varName, defVal) + "()+'";
     }) + "'";
-    result = result.replace(/(^|[^\\])''\+/g, '$1').replace(/\+''/g, '');
+    // 20180322: we refactored the code to try to keep moving around observable objects instead of their unwrapped values
+    // result = result.replace(/(^|[^\\])''\+/g, '$1').replace(/\+''$/, '');
+    result = result.replace(/^''\+/, '').replace(/\+''$/, '').replace(/^([^'+ ]*)\(\)$/, '$1');
 
     if (vars === 0 && result !== 'false' && result !== 'true') {
       console.error("Unexpected expression with no valid @variable references", expression);
+      throw "Unexpected expression with no valid @variable references: "+expression;
     }
     return result;
   } catch (e) {
-    throw "Exception parsing expression " + expression + " " + e;
+    throw "Exception parsing expression " + expression + " [" + defaultValue + "] " + e;
   }
 };
 
-var conditionBinding = function(condition, bindingProvider) {
-  var parsetree = jsep(condition);
-  var gentree = expressionGenerator(parsetree, bindingProvider);
-  return gentree;
+var declarationValueUrlPrefixer = function(value, templateUrlConverter) {
+  if (value.match(/url\(.*\)/)) {
+    var replaced = value.replace(/(url\()([^\)]*)(\))/g, function(matched, prefix, url, postfix) {
+      var trimmed = url.trim();
+      var apice = url.trim().charAt(0);
+      if (apice == '\'' || apice == '"') {
+        trimmed = trimmed.substr(1, trimmed.length - 2);
+      } else {
+        apice = '';
+      }
+      var newUrl = templateUrlConverter(trimmed);
+      if (newUrl !== null) {
+        return prefix + apice + newUrl + apice + postfix;
+      } else {
+        return matched;
+      }
+    });
+    return replaced;
+  } else {
+    return value;
+  }
 };
 
 module.exports = {
   addSlashes: addSlashes,
-  removeStyle: removeStyle,
   conditionBinding: conditionBinding,
-  expressionBinding: expressionBinding
+  expressionBinding: expressionBinding,
+  declarationValueUrlPrefixer: declarationValueUrlPrefixer
 };

@@ -1,11 +1,13 @@
 language: node_js
 node_js:
-  - "6"
-  - "5"
-  - "4.1"
-  - "4.0"
-  - "0.12"
-  - "0.11"
-  - "iojs"
-before_install: npm install -g grunt-cli
-install: npm install
+  - "18"
+  - "16"
+  - "15"
+before_install:
+  - npm install -g grunt-cli
+  - npm install -g codecov
+install:
+  - npm install
+script:
+  - npm test
+  - codecov
