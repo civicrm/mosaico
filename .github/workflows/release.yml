@@ -9,7 +9,7 @@ name: Release
 jobs:
   build:
     name: Make tarball
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-node@v3
