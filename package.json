@@ -119,7 +119,9 @@
   },
   "scripts": {
     "start": "grunt",
-    "test": "grunt jasmine_node"
+    "test": "grunt jasmine_node",
+    "build": "grunt build",
+    "tarball": "[ -f mosaico-dist.tar.gz ] && rm -f mosaico-dist.tar.gz ; tar --transform 's;^;mosaico/;' -czf mosaico-dist.tar.gz NOTICE.txt LICENSE README.md favicon.ico build dist res templates"
   },
   "engines": {
     "node": ">= 18.0.0",
