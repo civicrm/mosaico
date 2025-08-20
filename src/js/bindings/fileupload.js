@@ -101,7 +101,7 @@ ko.bindingHandlers['fileupload'] = {
       dataType: 'json',
       dropZone: $parent.find('.mo-uploadzone')[0],
       autoUpload: true,
-      acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i,
+      acceptFileTypes: /(\.|\/)(gif|jpe?g|png|webp)$/i,
       maxFileSize: 1024 * 1024,
       // 2022-11-04 we used to disable image resizing for Android and Opera
       // but newer versions seems to deal with resizing correclty
